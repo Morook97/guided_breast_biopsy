@@ -1,2 +1,47 @@
+# === Data and output ===
+output/
 dataset/
+results/
+*.npy
+*.nii
+*.nii.gz
+*.dcm
+*.mha
+*.nrrd
+*.stl
+*.vtk
+
+# === Models / checkpoint ===
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.pkl
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# === Virtual environments ===
 py_venv/
+venv/
+.venv/
+env/
+
+# === IDE / OS ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === ROS2 build ===
+build/
+install/
+log/
+
+# === Temp ===
+*.log
+*.tmp
