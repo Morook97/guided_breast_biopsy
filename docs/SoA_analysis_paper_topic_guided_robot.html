@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State of the Art - Paper analysis for guided robot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+  :root {
+    --bg:#0f1117; --bg2:#161b27; --bg3:#1e2535; --border:#2a3348;
+    --accent:#4e9eff; --accent2:#7c5cfc; --green:#3ecf8e; --yellow:#f5a623;
+    --text:#c9d1e0; --text-dim:#6b7a99; --text-bright:#eef1f8;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.6;}
+  header{background:linear-gradient(135deg,#0d1520 0%,#1a2540 100%);border-bottom:1px solid var(--border);padding:28px 40px 22px;}
+  header h1{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);letter-spacing:.03em;}
+  nav{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 40px;display:flex;overflow-x:auto;}
+  nav a{display:block;padding:14px 18px;color:var(--text-dim);text-decoration:none;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;}
+  nav a:hover{color:var(--text-bright);border-color:var(--border);}
+  nav a.active{color:var(--accent);border-color:var(--accent);}
+  main{padding:32px 40px 80px;}
+  .task-header{margin:48px 0 10px;display:flex;align-items:center;gap:12px;}
+  .task-header h2{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text-bright);}
+  .task-num{font-family:var(--mono);font-size:11px;color:var(--accent2);background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.3);border-radius:4px;padding:2px 8px;}
+  .sub-header{margin:24px 0 8px;font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;border-left:2px solid var(--accent2);padding-left:8px;}
+  .query-box{display:flex;align-items:flex-start;gap:10px;background:rgba(78,158,255,.05);border:1px solid rgba(78,158,255,.18);border-radius:6px;padding:9px 14px;margin-bottom:18px;flex-wrap:wrap;}
+  .query-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.08em;white-space:nowrap;padding-top:2px;}
+  .query-text{font-family:var(--mono);font-size:11px;color:#8bb8e8;line-height:1.9;}
+  .query-text span{display:block;}
+  .table-wrap{width:100%;overflow-x:auto;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;}
+  table{width:100%;border-collapse:collapse;min-width:1700px;}
+  thead tr{background:var(--bg3);}
+  th{padding:10px 12px;text-align:left;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:12px 12px;vertical-align:top;border-bottom:1px solid rgba(42,51,72,.6);font-size:12px;line-height:1.55;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr{background:var(--bg2);transition:background .15s;}
+  tbody tr:hover{background:#1c2438;}
+  tbody tr:nth-child(even){background:#141929;}
+  tbody tr:nth-child(even):hover{background:#1c2438;}
+  .col-num{width:32px;min-width:32px;} .col-auth{width:120px;min-width:110px;}
+  .col-title{width:200px;min-width:175px;} .col-jour{width:138px;min-width:120px;}
+  .col-study{width:128px;min-width:108px;} .col-robot{width:150px;min-width:128px;}
+  .col-hw{width:190px;min-width:160px;} .col-ctrl{width:238px;min-width:205px;}
+  .col-met{width:230px;min-width:195px;} .col-doi{width:110px;min-width:90px;}
+  .num-cell{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
+  .author-cell strong{color:var(--text-bright);font-weight:600;display:block;}
+  .title-cell{font-style:italic;color:#a8bbd4;font-size:11px;line-height:1.5;}
+  .journal-cell{font-style:italic;color:var(--text-dim);font-size:11px;}
+  .doi-link{font-family:var(--mono);font-size:10px;color:var(--accent);text-decoration:none;word-break:break-all;}
+  .doi-link:hover{text-decoration:underline;}
+  .met-cell strong{color:var(--green);font-family:var(--mono);font-size:11px;font-weight:600;}
+  .met-cell .note{color:var(--text-dim);font-size:11px;font-style:italic;margin-top:3px;display:block;}
+  .kp-table{min-width:1100px;}
+  .kp-paper{width:140px;} .kp-task{width:190px;} .kp-key{width:auto;} .kp-doi{width:130px;min-width:110px;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:600;}
+  .tag-t{background:rgba(78,158,255,.12);color:var(--accent);border:1px solid rgba(78,158,255,.25);}
+  .tag-b{background:rgba(124,92,252,.12);color:var(--accent2);border:1px solid rgba(124,92,252,.25);}
+  .kp-key{color:var(--text-bright);font-size:12px;line-height:1.6;}
+  .kp-key em{color:var(--green);font-style:normal;font-family:var(--mono);font-size:11px;}
+  footer{text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;border-top:1px solid var(--border);}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4560;}
+</style>
+</head>
+<body>
+<header><h1>State of the Art — Paper analysis for guided robot</h1></header>
+<nav>
+  <a href="#task1" class="active">TASK 1 — US Tracking</a>
+  <a href="#s1a">1a · Impedance Control</a>
+  <a href="#s1b">1b · Visual Servoing</a>
+  <a href="#s1c">1c · Trajectory Planning</a>
+  <a href="#task2">TASK 2 — Biopsy</a>
+  <a href="#s2a">2a · Full Systems</a>
+  <a href="#s2b">2b · Force/Position</a>
+  <a href="#s2c">2c · Deformation</a>
+  <a href="#s2d">2d · Review</a>
+  <a href="#kp">Key Points</a>
+</nav>
+<main>
+
+<!-- ═══ TASK 1 ═══ -->
+<div class="task-header" id="task1"><span class="task-num">TASK 1</span><h2>Ultrasound Lesion Tracking</h2></div>
+<div class="query-box">
+  <span class="query-label">SCOPUS QUERY</span>
+  <div class="query-text"><span>( "robot*" ) AND ( "ultrasound" ) AND ( "impedance control" ) AND ( "tracking" )</span></div>
+</div>
+
+<!-- 1a -->
+<div class="sub-header" id="s1a">1a — Impedance Control + probe-tissue contact</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">1</td>
+  <td class="author-cell"><strong>Ipsen et al., 2021</strong></td>
+  <td class="title-cell">Towards automated ultrasound imaging — Robotic image acquisition in liver and prostate for long-term motion monitoring</td>
+  <td class="journal-cell">Physics in Medicine and Biology</td>
+  <td><strong style="color:#3ecf8e">Real data</strong><br>5 healthy volunteers<br>Liver &amp; prostate, 30 min in vivo, free breathing</td>
+  <td>KUKA LBR iiwa 7 R800<br><span style="color:var(--text-dim);font-size:11px">7-DOF, integrated torque sensors, wall-mounted</span></td>
+  <td>Convex US probe (abdominal); joystick remote for initial positioning; sensorless (no external F/T — joint torques only)</td>
+  <td><strong style="color:var(--accent)">Cartesian Impedance Control</strong> asymmetric:<br>k<sub>z</sub>=0 N/m (fully compliant along probe axis, follows breathing passively)<br>k<sub>x</sub>=k<sub>y</sub>=100 N/m (stiff laterally to maintain scan plane)<br>Force target: 10 N · Safety threshold: 25 N</td>
+  <td class="met-cell">
+    Median force <strong>10.0 N ± 0.1 N IQR</strong> across all 10 sessions, no interruptions<br>
+    Image quality: normalized entropy <strong>0.96 ± 0.01</strong> stable throughout 30 min<br>
+    Liver breathing excursion: up to <strong>45 mm</strong> (IQR 4–20 mm, SI direction)<br>
+    Prostate slow drift: up to <strong>9.9 mm</strong> over 30 min (bladder filling)
+    <span class="note">Reference force range for breast (shallower, softer tissue): 3–5 N</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1088/1361-6560/abf277" target="_blank">10.1088/1361-6560/abf277</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">2</td>
+  <td class="author-cell"><strong>Fu et al., 2024</strong></td>
+  <td class="title-cell">Optimization-Based Variable Impedance Control for Contact-Rich Manipulation in Medical Applications</td>
+  <td class="journal-cell">IEEE Trans. Instrumentation and Measurement</td>
+  <td>Phantom<br>(rigid torso phantom + sloped surface)</td>
+  <td>KUKA LWR 4+<br><span style="color:var(--text-dim);font-size:11px">7-DOF</span></td>
+  <td>3D-printed linear US probe L12-5L40S-3 (TeleMed) + external F/T sensor M3815C (0–130 N range)</td>
+  <td><strong style="color:var(--accent)">QP-based variable impedance control</strong> + energy tank for passivity<br>Z-axis: stiffness K<sub>c</sub> ∈ [100–500 N/m] updated at each control step via QP<br>XY: high stiffness for scan plane tracking</td>
+  <td class="met-cell">
+    Max force RMSE: <strong>0.88 N</strong> (static contact phase)<br>
+    Force RMSE during scanning: <strong>0.50 N</strong> (comparable to expert human operator)<br>
+    Stiffness range validated on soft tissue: <strong>125–500 N/m</strong> (breast tissue reference)<br>
+    Energy tank prevents non-passive behaviour during stiffness transitions
+    <span class="note">Outperforms constant-stiffness impedance and matches manual scan accuracy</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TIM.2024.3372209" target="_blank">10.1109/TIM.2024.3372209</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">3</td>
+  <td class="author-cell"><strong>Fu et al., 2025</strong></td>
+  <td class="title-cell">Human-Inspired Active Compliant and Passive Shared Control Framework for Robotic Contact-Rich Tasks in Medical Applications</td>
+  <td class="journal-cell">IEEE Transactions on Robotics</td>
+  <td>Phantom (soft, rigid, slope, human torso) + human teleoperation user study</td>
+  <td>KUKA LWR IV+<br><span style="color:var(--text-dim);font-size:11px">7-DOF</span></td>
+  <td>Linear US probe + external F/T sensor + haptic master device Sigma.7</td>
+  <td><strong style="color:var(--accent)">QP-VIC + energy tank + bilateral shared control</strong><br>QP computes K<sub>opt</sub> ∈ [100–1000 N/m] minimising force error + deviation from minimum stiffness<br>Global energy tank monitors system-wide passivity<br>Outer PID force loop compensates tissue nonlinearities<br>Haptic feedback rendered to operator via Sigma.7</td>
+  <td class="met-cell">
+    Max median force error <strong>0.25 N</strong> across all phantom configurations<br>
+    NASA-TLX cognitive workload: <strong>−54.6%</strong> vs pure position control<br>
+    Optimal stiffness converges to ~<strong>500 N/m</strong> after init phase<br>
+    Validated stiffness range for soft breast tissue: <strong>[125–500 N/m]</strong><br>
+    Force RMSE improvement over Fu 2024: <strong>0.25 N vs 0.50 N</strong> (shared control benefit)
+    <span class="note">Most recent SoA (2025) for the hybrid force-impedance architecture</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TRO.2025.3548493" target="_blank">10.1109/TRO.2025.3548493</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">4</td>
+  <td class="author-cell"><strong>Xie &amp; Yan, 2022</strong></td>
+  <td class="title-cell">Varying rate adaptive hybrid position–impedance control for a robot-assisted ultrasound scanning system</td>
+  <td class="journal-cell">Mechanical Sciences</td>
+  <td>Simulation only<br>(MATLAB + V-rep, no physical robot)</td>
+  <td>PUMA 560 (MATLAB sim.)<br>KUKA LWR iiwa R800 (V-rep)</td>
+  <td>Simulated US probe + force sensor at end-effector (V-rep environment)</td>
+  <td><strong style="color:var(--accent)">VAHI</strong> (Varying Rate Adaptive Hybrid Impedance)<br>Adaptive backstepping controller for position tracking (XY scan plane)<br>Adaptive impedance with variable update rate σ = f(e<sub>f</sub>, ė<sub>f</sub>) for force (Z axis)<br>σ prevents overshoot on initial contact and steady-state error<br>Selection matrix S=diag(0,0,1,0,0,0)</td>
+  <td class="met-cell">
+    Force RMSE: <strong>0.24 N</strong> (VAHI) vs <strong>0.91 N</strong> (classic Hybrid Impedance) — <strong>74% reduction</strong><br>
+    Force overshoot at initial contact: <strong>&lt;1 N</strong> (vs ~3.5 N without σ adaptation)<br>
+    Validated on 3 surface types: flat, 45° inclined, sinusoidal (30 mm amplitude)<br>
+    Steady-state position error: <strong>&lt;0.5 mm</strong> in all conditions
+    <span class="note">Provides the theoretical architecture (Z in force, XY in impedance); validated in simulation only</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.5194/ms-13-559-2022" target="_blank">10.5194/ms-13-559-2022</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">5</td>
+  <td class="author-cell"><strong>Chen et al., 2025</strong></td>
+  <td class="title-cell">A cascaded force/position hybrid control method based on ultrasound robots</td>
+  <td class="journal-cell">IEEE ICIA Conference</td>
+  <td>Phantom (abdominal contact phantom, flat + curved surfaces)</td>
+  <td>Franka Emika Panda<br><span style="color:var(--text-dim);font-size:11px">7-DOF, joint torque sensors</span></td>
+  <td>Generic US probe + joint torque-based force sensing (no external F/T sensor)</td>
+  <td><strong style="color:var(--accent)">Cascaded force/position hybrid control</strong><br>XY tangential: Cartesian impedance for compliant scan-plane tracking<br>Z normal: impedance feedforward + PID force feedback (cascaded)<br>Null-space optimisation for redundant DOF (reduces joint fluctuations)<br>Dynamic median filter on force signal (suppresses Coriolis + sensor noise)</td>
+  <td class="met-cell">
+    Force std error reduction: <strong>−24.53%</strong> vs pure PID (10-trial average)<br>
+    Max peak force reduction: <strong>−4.15%</strong> (accidental probe detachment handled)<br>
+    Mean normal force error — flat surface: <strong>0.16 N</strong>, curved surface: <strong>0.44 N</strong>, abdominal phantom: <strong>0.46 N</strong><br>
+    Null-space optimisation reduces joint velocity fluctuations during scanning
+    <span class="note">Most architecturally complete (2025): adds dynamic filter + null-space to Xie 2022 scheme; tested on physical Franka</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ICIA64617.2025.11277546" target="_blank">10.1109/ICIA64617...</a></td>
+</tr>
+
+</tbody></table></div>
+
+<!-- 1b -->
+<div class="sub-header" id="s1b">1b — Visual Servoing (IBVS) — lesion tracking in US image</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">6</td>
+  <td class="author-cell"><strong>Šuligoj et al., 2022</strong></td>
+  <td class="title-cell">Intravascular Tracking of Micro-Agents Using Medical Ultrasound: Towards Clinical Applications</td>
+  <td class="journal-cell">IEEE Trans. Biomedical Engineering</td>
+  <td><strong style="color:#3ecf8e">Phantom</strong> (gel-agar gel#, anthropomorphic ant#) +<br><strong style="color:#3ecf8e">Biological tissue</strong> (porcine hind limb bio#)<br>Simulated breathing: 10 mm @ 0.27 Hz · Flow 12–640 mL/min</td>
+  <td>Franka Emika Panda<br><span style="color:var(--text-dim);font-size:11px">7-DOF, integrated torque sensors</span></td>
+  <td>Linear US probe L14-5/38 mm (SonixTouch Q+, BK Medical, 20 Hz) + Intel RealSense SR305 3D camera, both mounted on EE. Micro-agents: NdFeB beads Ø 250–1000 µm + star-shaped agents 30×500×500 µm (Direct Laser Writing + NiFe/Au coating)</td>
+  <td><strong style="color:var(--accent)">DCF-CSR Visual Servoing + Impedance Control:</strong><br>(1) Body surface point cloud from 3D camera<br>(2) US vessel segmentation: EPF noise filter → adaptive threshold → contour extraction (IOU=0.93±0.05, 100% detection rate)<br>(3) Planned surface path from vessel centroids + point cloud<br>(4) Impedance ctrl K<sub>s</sub>=diag[3000,3000,<strong>100</strong>,300,300,300] — low Z stiffness for contact compliance<br>(5) DCF-CSR tracker → visual servoing toward tracked micro-agent position</td>
+  <td class="met-cell">
+    Single-agent tracking success: <strong>99.8%</strong> of total time at <strong>28–36 FPS</strong> (agents 250–1000 µm)<br>
+    Multi-agent tracking (4 agents simultaneously): <strong>13 FPS</strong> with automatic occlusion recovery<br>
+    Minimum measured contact force during breathing compensation: <strong>2.02 N</strong> (mean: 4.73–7.04 N across phantom types)<br>
+    Visual servoing path length: <strong>80 mm</strong> (ant#, stationary) and <strong>120 mm</strong> (bio#, with simulated breathing)<br>
+    Vessel segmentation: <strong>100%</strong> detection rate (275/275 images, IOU 0.93±0.05)
+    <span class="note">Blueprint for US-surface visual servoing with impedance contact control — directly applicable to lesion tracking task</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TBME.2022.3176746" target="_blank">10.1109/TBME.2022.3176746</a></td>
+</tr>
+
+</tbody></table></div>
+
+<!-- 1c -->
+<div class="sub-header" id="s1c">1c — Lesion search / Adaptive Trajectory Planning</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">7</td>
+  <td class="author-cell"><strong>Tan et al., 2024</strong></td>
+  <td class="title-cell">Autonomous Trajectory Planning for Ultrasound-Guided Real-Time Tracking of Suspicious Breast Tumor Targets</td>
+  <td class="journal-cell">IEEE Trans. Automation Science and Engineering</td>
+  <td>Phantom<br>(custom silicone breast phantom with hyperechoic internal masses mimicking tumours)</td>
+  <td>Custom dual-arm robot 5-DOF<br>(3 translation + 2 rotation)<br>+ FUPCD (Flexible Ultrasonic Probe Clamping Device)</td>
+  <td>Custom US probe (38 mm width, ~20 FPS) + integrated 1D force sensor in FUPCD + multi-view structured light system (Orbbec Deeyea) for 3D breast surface reconstruction</td>
+  <td><strong style="color:var(--accent)">ACOTG</strong> (Acceleration-Continuous Online Trajectory Generation)<br>Global offline scan: S-strip trajectory auto-generated from 3D point cloud (20% overlap)<br>Online local tracking: 3rd-order FIR filters decompose motion into target direction + 2 normal directions, zeros velocity &amp; accel in normal dirs on target change<br>Tumour detection: YOLOv4 (single-frame) + KCF (multi-frame, 20-frame window)<br>Force control: closed-loop admittance control (1D, position inner loop)</td>
+  <td class="met-cell">
+    Horizontal error (target centre vs acoustic window centre): <strong>&lt;±1 mm</strong><br>
+    Depth error: 30 mm target depth ±10% (<strong>±3 mm</strong>)<br>
+    Contact force maintained: <strong>5 N ±15%</strong> (4.46–5.69 N) during tracking transitions<br>
+    ACOTG trajectory computation: <strong>&lt;1 µs</strong> per step<br>
+    Global offline trajectory generation: <strong>&lt;4 s</strong> for full breast coverage<br>
+    Tumour detection rate on phantom: <strong>99.05%</strong>
+    <span class="note">Reference architecture: separate global scan (search) + local tracking (follow)</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TASE.2023.3262844" target="_blank">10.1109/TASE.2023.3262844</a></td>
+</tr>
+
+</tbody></table></div>
+
+
+<!-- ═══ TASK 2 ═══ -->
+<div class="task-header" id="task2" style="margin-top:60px"><span class="task-num">TASK 2</span><h2>Ultrasound-Guided Breast Biopsy</h2></div>
+<div class="query-box">
+  <span class="query-label">SCOPUS QUERY</span>
+  <div class="query-text"><span>( "robot*" ) AND ( "breast" ) AND ( "biopsy" ) AND ( "image-guided" OR "ultrasound-guided" )</span></div>
+</div>
+
+<!-- 2a -->
+<div class="sub-header" id="s2a">2a — Complete robotic systems (architecture + control)</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">8</td>
+  <td class="author-cell"><strong>Ferrari et al., 2023</strong></td>
+  <td class="title-cell">Autonomous Robotic System for Breast Biopsy With Deformation Compensation</td>
+  <td class="journal-cell">IEEE Robotics and Automation Letters</td>
+  <td>Phantom<br>(CIRS Model 073, 15 internal lesions visible in both MRI &amp; US)</td>
+  <td>UR5e<br><span style="color:var(--text-dim);font-size:11px">Universal Robotics, 6-DOF</span></td>
+  <td>US probe MicrUS (Telemed, Vilnius) + RGB-D Intel RealSense D435 + custom 3D-printed holder. No needle inserted (evaluation up to pre-insertion positioning only).</td>
+  <td><strong style="color:var(--accent)">Autonomous 5-phase pipeline:</strong><br>(1) Semi-automatic MRI segmentation → lesion centroid<br>(2) ICP registration: RGB-D point cloud acquired rotating EE 360° @ 10° steps around phantom<br>(3) Approach to surface point P closest to lesion centroid<br>(4) Preloading: parallel force-position ctrl — force along Z (toward target), orientation in position<br>(5) Neo-Hookean FEM deformation compensation: 6929 tetrahedra, 0.02 s time step, Signorini contact law, updated in real-time during compression</td>
+  <td class="met-cell">
+    Median lesion MSE: <strong>3.3 mm</strong> (at 2 N preloading) vs median lesion radius 3.6 mm<br>
+    FEM compensation improvement: <strong>48%</strong> error reduction vs no deformation compensation<br>
+    vs freehand US (Tagliabue 2020): <strong>3.34 mm</strong> robotic vs 4.2 mm manual<br>
+    Optimal preloading: <strong>2 N</strong> — above this needle insertion error increases (&gt;0.4 mm at 3 N)<br>
+    ICP registration error: &lt;<strong>2 mm</strong> (assessed on 5 phantom poses)<br>
+    Code publicly available on GitLab — same UR5e setup
+    <span class="note">Most advanced complete SoA for this thesis task</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/LRA.2023.3237499" target="_blank">10.1109/LRA.2023.3237499</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">9</td>
+  <td class="author-cell"><strong>Liang et al., 2010</strong></td>
+  <td class="title-cell">3D Ultrasound Guidance of Autonomous Robotic Breast Biopsy</td>
+  <td class="journal-cell">Ultrasound in Medicine and Biology</td>
+  <td>Phantom<br>(turkey tissue — calcification: 3mm×10mm metal rod; cyst: Ø20mm water-filled cavity)</td>
+  <td>Gantry III Cartesian Robot (Techno-Isel)<br><span style="color:var(--text-dim);font-size:11px">3-DOF: X, Y, diagonal at 45°</span></td>
+  <td>3D volumetric US probe VMI (2.5 MHz, 440 Tx / 256 Rx channels, 65°–90° pyramidal, 30 vol/s, voxel ~5.6 mm³) + 18G 15 cm biopsy needle (Cook Medical). No force sensor.</td>
+  <td><strong style="color:var(--accent)">Open-loop position control</strong> with 3D US thresholding:<br>Hyperechoic target (calcification): voxels above amplitude threshold → centroid<br>Anechoic target (cyst): voxels below threshold + 1 mm proximity noise filter → centroid<br>Pipeline: 3D volume acquisition → MATLAB threshold segmentation → centroid → Cartesian coordinates → robot motion (no feedback)</td>
+  <td class="met-cell">
+    Needle-touch rms error (water tank): <strong>1.15 mm</strong> (1.45% of total needle path)<br>
+    Biopsy success: <strong>5/5</strong> calcification trials, <strong>5/5</strong> cyst trials (100%)<br>
+    Procedure time: ~<strong>1 min</strong> (calcification), ~<strong>3 min</strong> (cyst — slower due to noise filtering)<br>
+    Main limitation: voxel size ~5.6 mm³ (limits spatial resolution), volume transfer time ~1 min
+    <span class="note">Historical starting point: first fully autonomous US→robot biopsy pipeline. Simple thresholding sufficient for reliable 3D coordinates.</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.ultrasmedbio.2009.08.014" target="_blank">10.1016/j.ultrasmedbio...</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">10</td>
+  <td class="author-cell"><strong>Mallapragada et al., 2011</strong></td>
+  <td class="title-cell">Toward a Robot-Assisted Breast Intervention System</td>
+  <td class="journal-cell">IEEE/ASME Trans. Mechatronics</td>
+  <td>Phantom<br>(deformable plastic mimicking breast tissue, heterogeneous elastic properties)</td>
+  <td>Custom system: 3 robotic fingers (DC motor + lead screw, 45 N max force, 3 DOA) + 2D US system (2 DOA) + needle guide (1 DOA)<br><span style="color:var(--text-dim);font-size:11px">Total: 6 DOA, 14 potentiometers, 3 load cells</span></td>
+  <td>10-gauge hollow needle (~2.5 mm Ø) + 2D US probe Toshiba Eccocee SSA-340A + frame grabber DT3120 (RS-170, 30 fps). Freescale 68HC912B32 MCU. No external F/T sensor (load measured by finger load cells).</td>
+  <td><strong style="color:var(--accent)">Target manipulation + minimal US IBVS:</strong><br>3 fingers apply external force on breast surface to physically move tumour toward needle path<br>PI ctrl: outer proportional (position) + inner PI (velocity) on target centroid error<br>US tracking: sinusoidal planar search (7.5 mm amplitude, 1/15 Hz) if target leaves imaging plane<br>US segmentation: region segmentation → histogram equalisation → threshold → 3×3 median filter → blob centroid extraction</td>
+  <td class="met-cell">
+    Mean targeting RMSE: <strong>0.17 mm</strong> (min 0.02 mm, max 0.40 mm) across 13 heterogeneous phantom trials<br>
+    Mean positioning time: <strong>37 s</strong> (range 20–62 s depending on phantom stiffness)<br>
+    Error ~1 order of magnitude below needle diameter (2.5 mm)<br>
+    Concept: manipulating tissue to align tumour, not needle — avoids deformation modelling
+    <span class="note">First complete system with autonomous US centroid tracking as control feature (centroid IBVS)</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TMECH.2010.2068575" target="_blank">10.1109/TMECH.2010.2068575</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">11</td>
+  <td class="author-cell"><strong>Welleweerd et al., 2020</strong></td>
+  <td class="title-cell">Design of an end-effector for robot-assisted ultrasound-guided breast biopsies</td>
+  <td class="journal-cell">Int. J. Computer Assisted Radiology and Surgery</td>
+  <td>Phantom<br>(candle wax cuboid 6×6×11 cm³ with EM tracker target inside; in-air needle guide accuracy experiments)</td>
+  <td>KUKA MED 7 R800<br><span style="color:var(--text-dim);font-size:11px">7-DOF, medical certified (EU MDR)</span></td>
+  <td>Custom integrated EE: 3-DOF motorized needle guide (Herkulex DRS 0201, 0.325° resolution) + pneumatic needle depth stop (laser sensor PAT9125, 20 µm resolution; FESTO PV3211 valve, 3.5–6 N locking force @ 2–6 bar) + stereo camera + pico projector + LED arrays + US probe holder. Siemens VF13-5 linear US probe. Custom 2 mm OD needle with Aurora EM tracker (NDI).</td>
+  <td><strong style="color:var(--accent)">3-DOF needle guide inverse kinematics</strong><br>3-DOF motorized guide steers needle axis toward target in US imaging plane<br>Pneumatic depth stop: laser measures needle advance, valve locks at preset depth (0.100 mm accuracy)<br>Pre-operative registration: ICP on 3D surface markers recognized by stereo cameras<br>Probe tilted 45° from flange to allow robot approach to thoracic wall</td>
+  <td class="met-cell">
+    In-air needle guide accuracy: lateral y: <strong>0.1 ± 0.36 mm</strong>, depth z: <strong>0.3 ± 1.5 mm</strong><br>
+    Needle depth stop accuracy: <strong>0.100 mm</strong> mean (max 0.89 mm, range 30–90 mm insertion)<br>
+    Needle locking force: <strong>3.5–6 N</strong> at 2–6 bar<br>
+    Full system Euclidean error on phantom: <strong>3.21 mm</strong>, distance normal to trajectory-target: 3.03 mm<br>
+    Probe approach angle: 45° — oblique approach to avoid nipple–areola complex
+    <span class="note">Engineering reference for EE design constraints (forces, workspace, angulation). Part of EU H2020 MURAB project.</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-020-02122-1" target="_blank">10.1007/s11548-020-02122-1</a></td>
+</tr>
+
+</tbody></table></div>
+
+<!-- 2b -->
+<div class="sub-header" id="s2b">2b — Force/position control during needle insertion</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">12</td>
+  <td class="author-cell"><strong>Shi et al., 2002</strong></td>
+  <td class="title-cell">A Stereo-Fluoroscopic Image-Guided Robotic Biopsy Scheme</td>
+  <td class="journal-cell">IEEE Trans. Control Systems Technology</td>
+  <td><strong style="color:var(--yellow)">Pure simulation</strong><br>(MATLAB only, no physical experiments)</td>
+  <td>3R planar robot + wrist-mounted linear actuator<br><span style="color:var(--text-dim);font-size:11px">Simulated PUMA 200 reduced (joints 1,4,6 = 0)</span></td>
+  <td>Mammography machine (stereo X-ray) + image processing system. No physical force sensor. Imaging time delay Δ modelled in range tens–hundreds of ms.</td>
+  <td><strong style="color:var(--accent)">Stereo-fluoroscopic 3D path planning + adaptive trajectory control:</strong><br>Stereoscopic reconstruction: abnormality 3D position from 2 X-ray views (triangulation formulas)<br>Path: piecewise straight lines in Z<sub>r</sub>Y<sub>r</sub>-plane updated online when displacement &gt; tolerance<br>Trajectory ctrl: PD + compensation of tissue friction (damping B) and stiffness (spring K)<br>Adaptive version: online estimation of unknown B, K with update law (Barbalat lemma → asymptotic tracking)<br>Needle bending avoidance: v<sub>m</sub> ≤ F<sub>t</sub>/(B<sub>m</sub>·L<sub>m</sub>+c); ü<sub>m</sub> ≤ (F<sub>t</sub>−B<sub>m</sub>L<sub>m</sub>v<sub>m</sub>)/M</td>
+  <td class="met-cell">
+    Asymptotic position tracking proved in all 4 simulation scenarios (known B/K, unknown B/K adaptive, with lesion displacement)<br>
+    Adaptive control: convergence achieved, 2 s transient (not fully damped in 2 s window)<br>
+    Lesion displacement scenario: <strong>online path update eliminates tracking error</strong> within 0.5 s<br>
+    Simulation params: F<sub>t</sub>=1 N, L<sub>m</sub>=0.2 m, B<sub>m</sub>=10 Ns/m, v<sub>m</sub>=0.1 m/s, |P<sub>0</sub>P<sub>a</sub>|=0.1 m<br>
+    Imaging delay constraint derived: Δ ≤ (Φ−φ)/|v<sub>a</sub>|
+    <span class="note">Historical paper (2002) — first formalization of tissue impedance compensation + real-time image-guided path update for biopsy robot</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/87.998010" target="_blank">10.1109/87.998010</a></td>
+</tr>
+
+</tbody></table></div>
+
+<!-- 2c -->
+<div class="sub-header" id="s2c">2c — Tissue deformation management (safety-critical)</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">13</td>
+  <td class="author-cell"><strong>Tagliabue et al., 2019</strong></td>
+  <td class="title-cell">Position-based modeling of lesion displacement in ultrasound-guided breast biopsy</td>
+  <td class="journal-cell">Int. J. Computer Assisted Radiology and Surgery</td>
+  <td>Phantom<br>(CIRS multimodality, 10 internal lesions 5–10 mm visible in CT &amp; US; separate ballistic gel phantom for PBD calibration)</td>
+  <td>No robot<br><span style="color:var(--text-dim);font-size:11px">(computational study + freehand US operator)</span></td>
+  <td>Optical tracking: MicronTracker (Claron Technology) + 2D US probe (manual freehand, operator-held) + preoperative CT for geometry segmentation. Simulation platform: NVIDIA FleX on GPU, Unity engine, communication via OpenIGTLink to US system.</td>
+  <td><strong style="color:var(--accent)">Position-Based Dynamics (PBD)</strong> for real-time deformation prediction:<br>(1) Offline calibration on ballistic gel phantom: genetic algorithm optimises cluster spacing, cluster radius, stiffness parameter<br>(2) Fine-tuning on CIRS phantom: direct search minimising error on 1 US-visible landmark with varying deformation levels<br>Comparison with Neo-Hookean FEM (SOFA framework, 26,220 tetrahedra, 10 material samples) and rigid (no-deformation) model</td>
+  <td class="met-cell">
+    Mean lesion localisation error: <strong>&lt;7.26 mm</strong> for all 10 lesions at deformations up to 30 mm<br>
+    Speed: <strong>6.99 s</strong> (PBD) vs 16.37 s (FEM, SOFA) → <strong>2.3× faster</strong><br>
+    Fine-tuning benefit: <strong>−24%</strong> error reduction vs initial calibration<br>
+    vs rigid model: PBD is <strong>≥50% more accurate</strong> across all lesions and deformation levels<br>
+    Accuracy comparable to FEM while running in near-real-time on GPU
+    <span class="note">Alternative to FEM: PBD is faster but slightly less physically accurate. Together they bracket the deformation compensation design space.</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-019-01997-z" target="_blank">10.1007/s11548-019-01997-z</a></td>
+</tr>
+
+<tr>
+  <td class="num-cell">14</td>
+  <td class="author-cell"><strong>Groenhuis et al., 2018</strong></td>
+  <td class="title-cell">Analytical derivation of elasticity in breast phantoms for MRI-guided biopsy</td>
+  <td class="journal-cell">Int. J. Computer Assisted Radiology and Surgery</td>
+  <td>Physical phantom<br>(4 PVC phantoms with internal lesions, scanned in MRI 0.25T G-Scan Brio in prone + supine positions) + numerical validation (SOFA, FEBio)</td>
+  <td>No robot<br><span style="color:var(--text-dim);font-size:11px">(computational study — EU H2020 MURAB project)</span></td>
+  <td>MRI 0.25T scanner (Esaote G-Scan Brio) + custom 3D calibration grid (residual registration error 0.2 mm). No needle, no US probe.</td>
+  <td><strong style="color:var(--accent)">Analytical Young's modulus derivation</strong> from gravity-induced deformation:<br>Formula: D = β·g/E — deformation D measured from paired prone/supine MRI scans, β estimated from geometry, E derived analytically<br>No FEM mesh required: layer-by-layer analytical integration along vertical axis<br>Comparison with SOFA and FEBio at 5 mesh resolutions (β estimation + supine-prone matching methods)</td>
+  <td class="met-cell">
+    Deviation analytical vs FEM: <strong>≤9%</strong> (cylindrical phantom shapes), <strong>≤18%</strong> (realistic breast shapes)<br>
+    Computation time: <strong>&lt;1 s</strong> vs minutes (FEM at any resolution)<br>
+    Mean Young's modulus across 4 phantoms: <strong>4364–9677 Pa</strong> (biologically plausible for breast tissue)<br>
+    Method is 100–1000× faster than FEM — suitable for intraoperative E estimation<br>
+    Enables patient-specific E without CT/MRI segmentation of mechanical properties
+    <span class="note">Conceptual basis for the FEM used in Ferrari 2023. Provides E values usable as input for any biomechanical deformation model.</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-018-1803-x" target="_blank">10.1007/s11548-018-1803-x</a></td>
+</tr>
+
+</tbody></table></div>
+
+<!-- 2d -->
+<div class="sub-header" id="s2d">2d — General review (SoA — read first)</div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th class="col-num">#</th><th class="col-auth">Authors, Year</th><th class="col-title">Title</th>
+  <th class="col-jour">Journal</th><th class="col-study">Study Type</th><th class="col-robot">Robot</th>
+  <th class="col-hw">Instruments / Hardware</th><th class="col-ctrl">Control Method</th>
+  <th class="col-met">Key Metric / Result</th><th class="col-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td class="num-cell">15</td>
+  <td class="author-cell"><strong>Kulkarni et al., 2019</strong></td>
+  <td class="title-cell">Review of Robotic Needle Guide Systems for Percutaneous Intervention</td>
+  <td class="journal-cell">Annals of Biomedical Engineering</td>
+  <td><strong style="color:var(--accent)">Systematic review</strong><br>2008–2019, ~80 robotic systems<br>Categories: MRI / CT / US / multi-imager</td>
+  <td>All major robots (MrBot, KUKA MED, UR series, various custom) — comparative review across ~80 systems</td>
+  <td>All actuator types reviewed: piezoelectric, pneumatic, hydraulic, DC, ultrasonic, tendon-driven. Compatibility tests (SNR, homogeneity, distortion) reviewed per modality.</td>
+  <td>All control schemes reviewed: PID, SMC, PI, TDC, NNPID, impedance, co-manipulation (free/locked mode). No single control method proposed — taxonomy of existing approaches.</td>
+  <td class="met-cell">
+    FDA/regulatory: only <strong>manual needle insertion</strong> approved; robot limited to guide positioning<br>
+    MRI-guided: non-magnetic materials mandatory (PEEK, nylon, Delrin, ABS, polyoxymethylene)<br>
+    US-guided: least constrained modality — DC motors applicable, any structural material<br>
+    CT-guided: X-ray transparency required; carbon fibre, PEEK, ceramics used<br>
+    Trend: body-attached systems, multi-imager compatibility, combined force + image feedback<br>
+    ~80 systems reviewed; most for prostate and breast; few for liver and neurosurgery
+    <span class="note">Essential reading before writing SoA chapter — provides taxonomy, terminology, and regulatory context for the whole field.</span>
+  </td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s10439-019-02319-9" target="_blank">10.1007/s10439-019-02319-9</a></td>
+</tr>
+
+</tbody></table></div>
+
+
+<!-- ═══ KEY POINTS ═══ -->
+<div class="task-header" id="kp" style="margin-top:60px"><span class="task-num">SUMMARY</span><h2>Papers Key Points</h2></div>
+<div class="table-wrap"><table class="kp-table">
+<thead><tr>
+  <th class="kp-paper">Paper</th>
+  <th class="kp-task">Task</th>
+  <th class="kp-key">Key concept</th>
+  <th class="kp-doi">DOI</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#1 — Ipsen 2021</strong></td>
+  <td><span class="tag tag-t">US tracking — control</span></td>
+  <td class="kp-key">Asymmetric Cartesian Impedance Control: k<sub>z</sub>=<em>0 N/m</em> (passive breathing compliance), k<sub>x,y</sub>=<em>100 N/m</em> (stiff laterally). Force target <em>10 N</em>, safety threshold 25 N. 30 min uninterrupted in vivo (5 volunteers, liver + prostate). Liver excursion up to <em>45 mm</em> compensated passively by k<sub>z</sub>=0 design.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1088/1361-6560/abf277" target="_blank">10.1088/1361-6560/abf277</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#2 — Fu 2024</strong></td>
+  <td><span class="tag tag-t">US tracking — control</span></td>
+  <td class="kp-key">QP-based variable impedance: stiffness K<sub>c</sub> ∈ <em>[100–500 N/m]</em> updated in real-time, energy tank ensures passivity during transitions. Force RMSE <em>0.50 N</em> during scanning, comparable to expert human operator. Validated stiffness range for breast soft tissue: <em>[125–500 N/m]</em>.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TIM.2024.3372209" target="_blank">10.1109/TIM.2024.3372209</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#3 — Fu 2025</strong></td>
+  <td><span class="tag tag-t">US tracking — control</span></td>
+  <td class="kp-key">QP-VIC + global energy tank + bilateral shared control (Sigma.7 haptic master). K<sub>opt</sub> ∈ <em>[100–1000 N/m]</em>. Force RMSE <em>0.25 N</em> (best of all impedance papers). NASA-TLX cognitive load <em>−54.6%</em> vs position ctrl. Most recent SoA (2025) for the hybrid force-impedance architecture.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TRO.2025.3548493" target="_blank">10.1109/TRO.2025.3548493</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#4 — Xie 2022</strong></td>
+  <td><span class="tag tag-t">US tracking — control</span></td>
+  <td class="kp-key">VAHI hybrid: Z-axis in adaptive impedance with variable rate σ = f(e<sub>f</sub>, ė<sub>f</sub>), XY in adaptive backstepping position. Prevents initial contact overshoot (&lt;<em>1 N</em>) and steady-state error. Force RMSE <em>0.24 N</em> vs <em>0.91 N</em> classic HI (<em>74% reduction</em>). Simulation only (MATLAB + V-rep).</td>
+  <td><a class="doi-link" href="https://doi.org/10.5194/ms-13-559-2022" target="_blank">10.5194/ms-13-559-2022</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#5 — Chen 2025</strong></td>
+  <td><span class="tag tag-t">US tracking — control</span></td>
+  <td class="kp-key">Cascaded force/position hybrid on physical Franka: XY impedance + Z cascaded (feedforward impedance + PID feedback) + null-space optimisation (reduces joint fluctuations) + dynamic median filter on force signal. Flat surface mean error <em>0.16 N</em>, −<em>24.53%</em> force std vs pure PID.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ICIA64617.2025.11277546" target="_blank">10.1109/ICIA64617...</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#6 — Šuligoj 2022</strong></td>
+  <td><span class="tag tag-t">US tracking — visual servoing</span></td>
+  <td class="kp-key">DCF-CSR visual servoing (tracker + error recovery) + impedance contact control K<sub>s</sub>=diag[3000,3000,<em>100</em>,300,300,300]. Tracking <em>99.8%</em> success at 28–36 FPS, multi-agent 13 FPS with occlusion recovery. Min contact force <em>2.02 N</em>. Paths: <em>80 mm</em> (anthropomorphic) and <em>120 mm</em> (biological tissue) with simulated breathing.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TBME.2022.3176746" target="_blank">10.1109/TBME.2022.3176746</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#7 — Tan 2024</strong></td>
+  <td><span class="tag tag-t">US tracking — planning</span></td>
+  <td class="kp-key">ACOTG dual-mode: global S-strip offline scan (full breast coverage in <em>&lt;4 s</em>) + online local tracking (YOLOv4 + KCF). Horizontal error <em>&lt;±1 mm</em>, depth <em>30 mm ±10%</em>, force <em>5 N ±15%</em>. Computation <em>&lt;1 µs</em>. Tumour detection <em>99.05%</em>. Reference architecture for global search + local tracking.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TASE.2023.3262844" target="_blank">10.1109/TASE.2023.3262844</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#8 — Ferrari 2023</strong></td>
+  <td><span class="tag tag-b">Biopsy — complete SoA</span></td>
+  <td class="kp-key">5-phase autonomous pipeline: MRI segmentation → ICP registration (RGB-D point cloud, 360°) → surface approach → preloading at <em>2 N</em> (parallel force-position ctrl) → Neo-Hookean FEM compensation (6929 tetrahedra, real-time). Median lesion MSE <em>3.3 mm</em> (vs radius 3.6 mm). Improvement <em>48%</em> with FEM. Code on GitLab.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/LRA.2023.3237499" target="_blank">10.1109/LRA.2023.3237499</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#9 — Liang 2010</strong></td>
+  <td><span class="tag tag-b">Biopsy — base pipeline</span></td>
+  <td class="kp-key">First fully autonomous US→robot biopsy pipeline: 3D US amplitude thresholding → centroid → open-loop Cartesian robot. Needle-touch rms <em>1.15 mm</em>. Success <em>5/5</em> calcification + <em>5/5</em> cyst trials. Probe at 45° (oblique clinical approach). Simple thresholding sufficient for reliable 3D coordinates.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.ultrasmedbio.2009.08.014" target="_blank">10.1016/j.ultrasmedbio...</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#10 — Mallapragada 2011</strong></td>
+  <td><span class="tag tag-b">Biopsy — architecture</span></td>
+  <td class="kp-key">Inverted approach: 3 robotic fingers move tumour toward needle path (avoids deformation modelling). PI control on US centroid error (IBVS minimal). Sinusoidal plane search if target lost. RMSE <em>0.17 mm</em>, mean positioning <em>37 s</em>. First system with autonomous US centroid tracking as control feature.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TMECH.2010.2068575" target="_blank">10.1109/TMECH.2010.2068575</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#11 — Welleweerd 2020</strong></td>
+  <td><span class="tag tag-b">Biopsy — mechanics</span></td>
+  <td class="kp-key">Integrated EE (KUKA MED): 3-DOF motorized needle guide (IK toward target in US plane) + pneumatic depth stop (<em>0.100 mm</em> accuracy, <em>3.5–6 N</em> locking force) + stereo camera + US probe holder. Probe at 45°. Full system Euclidean error: <em>3.21 mm</em>. Engineering reference for EE design constraints (forces, workspace, angulation).</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-020-02122-1" target="_blank">10.1007/s11548-020-02122-1</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#12 — Shi 2002</strong></td>
+  <td><span class="tag tag-b">Biopsy — historical</span></td>
+  <td class="kp-key">First formalization of tissue impedance compensation for biopsy robot: stereo X-ray → 3D path, PD ctrl + friction B + stiffness K compensation, adaptive version for unknown B/K (Barbalat → asymptotic convergence). Online path update eliminates lesion displacement error. Needle bending avoidance via velocity/acceleration limits. Simulation only.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/87.998010" target="_blank">10.1109/87.998010</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#13 — Tagliabue 2019</strong></td>
+  <td><span class="tag tag-b">Biopsy — deformation</span></td>
+  <td class="kp-key">Real-time PBD deformation model (NVIDIA FleX/Unity): offline calibration with genetic algorithm + fine-tuning on target phantom (−<em>24%</em> error). Mean error <em>&lt;7.26 mm</em> (deformations 10–30 mm). Speed <em>6.99 s</em> vs 16.37 s FEM → <em>2.3× faster</em>. Alternative to FEM: trades slight accuracy for real-time speed.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-019-01997-z" target="_blank">10.1007/s11548-019-01997-z</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#14 — Groenhuis 2018</strong></td>
+  <td><span class="tag tag-b">Biopsy — deformation</span></td>
+  <td class="kp-key">Analytical E derivation from paired MRI scans (prone/supine): D = β·g/E, no FEM mesh needed. Computation <em>&lt;1 s</em> vs minutes (FEM). Deviation from FEM: <em>≤9%</em> (cylindrical), <em>≤18%</em> (breast shapes). Mean phantom E: <em>4364–9677 Pa</em>. Provides patient-specific E as direct input for FEM or PBD deformation models.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-018-1803-x" target="_blank">10.1007/s11548-018-1803-x</a></td>
+</tr>
+
+<tr>
+  <td><strong style="color:var(--text-bright)">#15 — Kulkarni 2019</strong></td>
+  <td><span class="tag tag-b">Biopsy — SoA review</span></td>
+  <td class="kp-key">Systematic review ~<em>80 systems</em> (2008–2019): MRI / CT / US / multi-imager. FDA approves only <em>manual needle insertion</em> (robot for positioning only). MRI: non-magnetic materials mandatory (PEEK, nylon, Delrin). US: least constrained, DC motors applicable. Trends: body-attached, multi-imager, combined force+image feedback. Essential taxonomy for SoA chapter.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s10439-019-02319-9" target="_blank">10.1007/s10439-019-02319-9</a></td>
+</tr>
+
+</tbody></table></div>
+
+</main>
+<footer>
+  State of the Art — Paper analysis for guided robot &nbsp;·&nbsp; Last updated: 30/03/2026 &nbsp;·&nbsp; 15 papers total · all read
+</footer>
+<script>
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.id; });
+    navLinks.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + current); });
+  });
+</script>
+</body>
+</html>
