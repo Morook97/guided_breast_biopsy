@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoA — Ultrasound simulators for thesis Moro</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+  :root {
+    --bg:#0f1117; --bg2:#161b27; --bg3:#1e2535; --border:#2a3348;
+    --accent:#4e9eff; --accent2:#7c5cfc; --green:#3ecf8e; --yellow:#f5a623;
+    --red:#ff5c75; --orange:#ff8c42;
+    --text:#c9d1e0; --text-dim:#6b7a99; --text-bright:#eef1f8;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.6;}
+  header{background:linear-gradient(135deg,#0d1520 0%,#1a2540 100%);border-bottom:1px solid var(--border);padding:28px 40px 22px;}
+  header h1{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);letter-spacing:.03em;}
+  header .sub{font-size:12px;color:var(--text-dim);margin-top:6px;}
+  nav{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 40px;display:flex;overflow-x:auto;}
+  nav a{display:block;padding:14px 18px;color:var(--text-dim);text-decoration:none;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;border-bottom:2px solid transparent;white-space:nowrap;}
+  nav a:hover{color:var(--text-bright);border-color:var(--border);}
+  nav a.active{color:var(--accent);border-color:var(--accent);}
+  main{padding:32px 40px 80px;}
+  .block-header{margin:48px 0 14px;display:flex;align-items:center;gap:12px;}
+  .block-header h2{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text-bright);}
+  .block-num{font-family:var(--mono);font-size:11px;color:var(--accent2);background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.3);border-radius:4px;padding:2px 8px;}
+  .query-box{display:flex;align-items:flex-start;gap:10px;background:rgba(78,158,255,.05);border:1px solid rgba(78,158,255,.18);border-radius:6px;padding:9px 14px;margin-bottom:18px;flex-wrap:wrap;}
+  .query-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.08em;white-space:nowrap;padding-top:2px;}
+  .query-text{font-family:var(--mono);font-size:11px;color:#8bb8e8;line-height:1.9;}
+  .table-wrap{width:100%;overflow-x:auto;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;}
+  table{width:100%;border-collapse:collapse;min-width:1500px;}
+  thead tr{background:var(--bg3);}
+  th{padding:10px 12px;text-align:left;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:12px 12px;vertical-align:top;border-bottom:1px solid rgba(42,51,72,.6);font-size:12px;line-height:1.55;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr{background:var(--bg2);}
+  tbody tr:hover{background:#1c2438;}
+  tbody tr:nth-child(even){background:#141929;}
+  tbody tr:nth-child(even):hover{background:#1c2438;}
+  .num-cell{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);width:48px;}
+  .author-cell strong{color:var(--text-bright);font-weight:600;display:block;}
+  .author-cell .text-dim{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
+  .title-cell{font-style:italic;color:#a8bbd4;font-size:11px;line-height:1.5;width:280px;}
+  .journal-cell{font-style:italic;color:var(--text-dim);font-size:11px;width:160px;}
+  .doi-link{font-family:var(--mono);font-size:10px;color:var(--accent);text-decoration:none;word-break:break-all;}
+  .doi-link:hover{text-decoration:underline;}
+  .abst-cell{font-size:11.5px;line-height:1.55;color:var(--text);min-width:340px;max-width:480px;}
+  .text-dim{color:var(--text-dim);}
+  .tag{display:inline-block;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:600;white-space:nowrap;}
+  .tag-wave{background:rgba(78,158,255,.12);color:var(--accent);border:1px solid rgba(78,158,255,.25);}
+  .tag-conv{background:rgba(62,207,142,.12);color:var(--green);border:1px solid rgba(62,207,142,.25);}
+  .tag-ray{background:rgba(124,92,252,.12);color:var(--accent2);border:1px solid rgba(124,92,252,.25);}
+  .tag-scat{background:rgba(255,140,66,.12);color:var(--orange);border:1px solid rgba(255,140,66,.25);}
+  .tag-learn{background:rgba(255,92,117,.12);color:var(--red);border:1px solid rgba(255,92,117,.25);}
+  .tag-ct{background:rgba(245,166,35,.12);color:var(--yellow);border:1px solid rgba(245,166,35,.25);}
+  .tag-rob{background:rgba(124,92,252,.20);color:#9b87ff;border:1px solid rgba(124,92,252,.4);}
+  .tag-open{background:rgba(62,207,142,.20);color:#5ee0a3;border:1px solid rgba(62,207,142,.4);}
+  .tag-breast{background:rgba(255,92,117,.20);color:#ff7a90;border:1px solid rgba(255,92,117,.4);}
+  .tag-rev{background:rgba(245,166,35,.20);color:#ffb84d;border:1px solid rgba(245,166,35,.4);}
+  .tag-other{background:rgba(107,122,153,.12);color:var(--text-dim);border:1px solid var(--border);}
+  footer{text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<header>
+  <h1>State of the Art — Ultrasound simulators analysis</h1>
+  <div class="sub">32 papers from systematic Scopus search · 6 thematic blocks · classified by simulator family</div>
+</header>
+<nav>
+  <a href="#block1">BLOCK 1</a>
+  <a href="#block2">BLOCK 2</a>
+  <a href="#block3">BLOCK 3</a>
+  <a href="#block4">BLOCK 4</a>
+  <a href="#block5">BLOCK 5</a>
+  <a href="#block6">BLOCK 6</a>
+</nav>
+<main>
+<div class="block-header" id="block1"><span class="block-num">BLOCK 1</span><h2>Foundational ultrasound simulators (pre-2014)</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( ( &quot;ultrasound simulation&quot; OR &quot;simulated ultrasound&quot; OR &quot;B-mode simulation&quot; OR &quot;simulating ultrasound&quot; OR &quot;k-Wave&quot; ) ) AND PUBYEAR &lt; 2014</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">1.1</td>
+  <td class="author-cell"><strong>Bamber &amp; Dickinson</strong><span class="text-dim">1980</span></td>
+  <td class="title-cell">Ultrasonic B-scanning: a computer simulation</td>
+  <td class="journal-cell">Phys. Med. Biol. 25(3)</td>
+  <td><span class="tag tag-conv">Convolution</span></td>
+  <td class="abst-cell">The 1980 seminal paper that first numerically simulated a clinical B-mode image. Tissue is modelled as a population of point scatterers and the echo signal is generated through a 1-D point-spread-function convolution. Defines the convolution-based family of simulators that all CT-to-US methods (Shams, Wein) build upon.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1088/0031-9155/25/3/004" target="_blank">10.1088/0031-9155/25/3/004</a></td>
+</tr>
+<tr>
+  <td class="num-cell">1.2</td>
+  <td class="author-cell"><strong>Jensen</strong><span class="text-dim">1996</span></td>
+  <td class="title-cell">Field: A program for simulating ultrasound systems</td>
+  <td class="journal-cell">Med. &amp; Biol. Eng. &amp; Computing 34 (Suppl 1)</td>
+  <td><span class="tag tag-wave">Wave-based</span></td>
+  <td class="abst-cell">Foundational Matlab simulator that uses spatial impulse responses to model linear ultrasound systems with arbitrary transducer geometries, apodisation and excitation. Supports pulse-echo and continuous-wave fields, and remains the de-facto reference cited by virtually every successive simulator paper in the wave-based and convolution-based families.</td>
+  <td><span class="text-dim">—</span></td>
+</tr>
+<tr>
+  <td class="num-cell">1.3</td>
+  <td class="author-cell"><strong>Jensen</strong><span class="text-dim">2004</span></td>
+  <td class="title-cell">Simulation of advanced ultrasound systems using Field II</td>
+  <td class="journal-cell">IEEE ISBI 2004</td>
+  <td><span class="tag tag-wave">Wave-based</span></td>
+  <td class="abst-cell">A 2004 update of Field II describing how to simulate advanced linear imaging schemes such as synthetic-aperture and coded excitation. Demonstrates parallelisation across a 32-CPU cluster reducing simulation time from 17 months to 391 hours. This is the modern citation key for Field II in 2014+ literature.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ISBI.2004.1398618" target="_blank">10.1109/ISBI.2004.1398618</a></td>
+</tr>
+<tr>
+  <td class="num-cell">1.4</td>
+  <td class="author-cell"><strong>Shams, Hartley, Navab</strong><span class="text-dim">2008</span></td>
+  <td class="title-cell">Real-Time Simulation of Medical Ultrasound from CT Images</td>
+  <td class="journal-cell">MICCAI 2008 LNCS 5242</td>
+  <td><span class="tag tag-conv">Convolution</span></td>
+  <td class="abst-cell">Foundational paper splitting CT-to-US simulation into a one-shot pre-processing phase that builds a fixed-view 3D scattering volume from a segmented CT, and a run-time phase that traces the transducer plane through the volume and adds acoustic artefacts. It is the canonical reference for any pipeline that turns a CT volume into B-mode images at interactive frame rates.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/978-3-540-85990-1_88" target="_blank">10.1007/978-3-540-85990-1_88</a></td>
+</tr>
+<tr>
+  <td class="num-cell">1.5</td>
+  <td class="author-cell"><strong>Wein et al.</strong><span class="text-dim">2008</span></td>
+  <td class="title-cell">Simulation and fully automatic multimodal registration of medical ultrasound</td>
+  <td class="journal-cell">Med. Image Analysis 12(5)</td>
+  <td><span class="tag tag-conv">Convolution</span></td>
+  <td class="abst-cell">Derives an acoustic impedance proxy from CT Hounsfield Units and convolves it with a depth-dependent point-spread-function to generate B-mode images that register against real intra-operative ultrasound. Together with Shams 2008 it underpins the entire CT-to-US convolution literature; demonstrated for liver and kidney registration at the time of MICCAI 2007 / MIA 2008.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.media.2008.06.006" target="_blank">10.1016/j.media.2008.06.006</a></td>
+</tr>
+<tr>
+  <td class="num-cell">1.6</td>
+  <td class="author-cell"><strong>Treeby &amp; Cox</strong><span class="text-dim">2010</span></td>
+  <td class="title-cell">k-Wave: MATLAB toolbox for the simulation and reconstruction of photoacoustic wave fields</td>
+  <td class="journal-cell">J. Biomedical Optics 15(2)</td>
+  <td><span class="tag tag-wave">Wave-based</span></td>
+  <td class="abst-cell">Open-source Matlab toolbox for the time-domain simulation of full nonlinear acoustic wave propagation in heterogeneous media. Uses k-space pseudospectral methods on regular grids and supports both CPU and GPU back-ends. Adopted alongside Field II as the standard wave-based reference for both ultrasound and photoacoustic simulation.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1117/1.3360308" target="_blank">10.1117/1.3360308</a></td>
+</tr>
+<tr>
+  <td class="num-cell">1.7</td>
+  <td class="author-cell"><strong>Bürger et al.</strong><span class="text-dim">2013</span></td>
+  <td class="title-cell">Real-Time GPU-Based Ultrasound Simulation Using Deformable Mesh Models</td>
+  <td class="journal-cell">IEEE Trans. Med. Imaging 32(3)</td>
+  <td><span class="tag tag-ray">Ray-based</span></td>
+  <td class="abst-cell">GPU ray-tracing simulator over deformable triangle meshes (&gt;2M triangles, up to 200k deformed per frame) with NVIDIA PhysX-driven soft-tissue deformation. Models attenuation, refraction, range distortion and acoustic shadowing in real time. The architecture that NVIDIA Isaac for Healthcare implicitly modernises in 2025 with OptiX raytracing.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TMI.2012.2234474" target="_blank">10.1109/TMI.2012.2234474</a></td>
+</tr>
+</tbody></table></div>
+<div class="block-header" id="block2"><span class="block-num">BLOCK 2</span><h2>Ray-based &amp; Scatterer-based simulators (post-2014)</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( ( &quot;ray tracing&quot; OR &quot;raytracing&quot; OR &quot;Monte Carlo&quot; ) AND ultrasound AND ( simulation OR synthesis ) ) AND PUBYEAR &gt; 2015</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">2.1</td>
+  <td class="author-cell"><strong>Mattausch O.</strong><span class="text-dim">2017</span></td>
+  <td class="title-cell">Comparison of texture synthesis methods for content generation in ultrasound simulation for training</td>
+  <td class="journal-cell">Progress in Biomedical Optics and Imaging - Proceedings</td>
+  <td><span class="tag tag-ray">Ray-based / texture</span></td>
+  <td class="abst-cell">Compares three procedural texture-synthesis strategies that fill in micro-structure (speckle, fibrosis, fat) inside a ray-traced simulator. Useful as a reference for the texture-on-organ step that any ray-based pipeline (including Isaac) needs.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1117/12.2250604" target="_blank">10.1117/12.2250604</a></td>
+</tr>
+<tr>
+  <td class="num-cell">2.2</td>
+  <td class="author-cell"><strong>Mattausch O.</strong><span class="text-dim">2018</span></td>
+  <td class="title-cell">Realistic ultrasound simulation of complex surface models using interactive Monte-Carlo path tracing</td>
+  <td class="journal-cell">Computer Graphics Forum</td>
+  <td><span class="tag tag-ray">Ray-based</span></td>
+  <td class="abst-cell">Mattausch and Goksel introduce interactive Monte-Carlo path tracing on triangle-soup surface meshes. Adds multiple-scattering, reverberation and refraction artefacts that Bürger 2013 could not capture, while still running interactively on commodity GPUs. Effectively the immediate predecessor of the 2025 Isaac/UltraRay generation.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1111/cgf.13260" target="_blank">10.1111/cgf.13260</a></td>
+</tr>
+<tr>
+  <td class="num-cell">2.3</td>
+  <td class="author-cell"><strong>Satheesh B.A.</strong><span class="text-dim">2018</span></td>
+  <td class="title-cell">A method of ultrasound simulation from patient-specific CT image data: A preliminary simulation study</td>
+  <td class="journal-cell">Proceedings - International Symposium on Biomedical Ima</td>
+  <td><span class="tag tag-scat">Scatterer-based / CT</span></td>
+  <td class="abst-cell">Preliminary CT-to-US scatterer simulation. Each CT voxel is converted to a population of scatterers whose density and amplitude depend on the local Hounsfield value, then Field-II-like beamforming generates the B-mode image. A direct ancestor of the workflow envisaged for this thesis.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ISBI.2018.8363853" target="_blank">10.1109/ISBI.2018.8363853</a></td>
+</tr>
+<tr>
+  <td class="num-cell">2.4</td>
+  <td class="author-cell"><strong>Starkov R.</strong><span class="text-dim">2019</span></td>
+  <td class="title-cell">Ultrasound simulation with deformable and patient-specific scatterer maps</td>
+  <td class="journal-cell">International Journal of Computer Assisted Radiology an</td>
+  <td><span class="tag tag-scat">Scatterer-based</span></td>
+  <td class="abst-cell">Starkov, Tanner and Goksel build patient-specific scatterer maps from MR/CT volumes and deform them with FEM. The ultrasound image is then generated by interrogating these deformable scatterer maps, bridging the gap between purely surface-based ray simulators and volumetric scatterer simulators à la Field II.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-019-02054-5" target="_blank">10.1007/s11548-019-02054-5</a></td>
+</tr>
+<tr>
+  <td class="num-cell">2.5</td>
+  <td class="author-cell"><strong>Satheesh B. A.</strong><span class="text-dim">2019</span></td>
+  <td class="title-cell">A fast method for simulating ultrasound image from patient-specific CT data</td>
+  <td class="journal-cell">Biomedical Signal Processing and Control</td>
+  <td><span class="tag tag-scat">Scatterer-based / CT</span></td>
+  <td class="abst-cell">Extension of Satheesh &amp; Thittai 2018 with a GPU-accelerated convolution kernel reducing per-frame simulation from minutes to seconds. Validated on liver phantoms and on Visible Human CT data; the closest published method to what we want to implement on the breast biopsy phantom.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.bspc.2018.10.003" target="_blank">10.1016/j.bspc.2018.10.003</a></td>
+</tr>
+</tbody></table></div>
+<div class="block-header" id="block3"><span class="block-num">BLOCK 3</span><h2>Learning-based simulators (GAN, diffusion, NeRF)</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( &quot;ultrasound simulation&quot; OR &quot;ultrasound image synthesis&quot; OR &quot;synthetic ultrasound&quot; OR &quot;B-mode simulation&quot; ) AND PUBYEAR &gt; 2014</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">3.1</td>
+  <td class="author-cell"><strong>Hu Y.</strong><span class="text-dim">2017</span></td>
+  <td class="title-cell">Freehand ultrasound image simulation with spatially-conditioned generative adversarial networks</td>
+  <td class="journal-cell">Lecture Notes in Computer Science (including subseries </td>
+  <td><span class="tag tag-learn">Learning / GAN</span></td>
+  <td class="abst-cell">Hu et al. (UCL) condition a GAN on the 6-DoF probe pose to generate spatially consistent freehand sweeps from anatomical models. One of the first works to address the temporal coherence problem of GAN-based US simulation, which is essential for any robotic application that streams images.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/978-3-319-67564-0_11" target="_blank">10.1007/978-3-319-67564-0_11</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.2</td>
+  <td class="author-cell"><strong>Tom F.</strong><span class="text-dim">2018</span></td>
+  <td class="title-cell">Simulating patho-realistic ultrasound images using deep generative networks with adversarial learning</td>
+  <td class="journal-cell">Proceedings - International Symposium on Biomedical Ima</td>
+  <td><span class="tag tag-learn">Learning / GAN seminal</span></td>
+  <td class="abst-cell">Tom and Sheet present the first GAN-based US simulator able to inject realistic pathology (cysts, lesions) into healthy ultrasound images. Trained on intravascular and abdominal data; introduces the patho-realistic GAN concept that subsequent works (spGAN, ConPres) extend.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ISBI.2018.8363780" target="_blank">10.1109/ISBI.2018.8363780</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.3</td>
+  <td class="author-cell"><strong>Peng B.</strong><span class="text-dim">2019</span></td>
+  <td class="title-cell">A Real-Time Medical Ultrasound Simulator Based on a Generative Adversarial Network Model</td>
+  <td class="journal-cell">Proceedings - International Conference on Image Process</td>
+  <td><span class="tag tag-learn">Learning / GAN real-time</span></td>
+  <td class="abst-cell">Peng et al. demonstrate the first real-time (~15 fps) GAN-based US simulator running on a single GPU. Targets training of sonographers but the architecture is reusable for robotic applications that need a fast image synthesiser in the loop.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/ICIP.2019.8803570" target="_blank">10.1109/ICIP.2019.8803570</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.4</td>
+  <td class="author-cell"><strong>Bargsten L.</strong><span class="text-dim">2020</span></td>
+  <td class="title-cell">SpeckleGAN: a generative adversarial network with an adaptive speckle layer to augment limited training data for ultrasound image processing</td>
+  <td class="journal-cell">International Journal of Computer Assisted Radiology an</td>
+  <td><span class="tag tag-learn">Learning / GAN speckle</span></td>
+  <td class="abst-cell">Bargsten and Schlaefer add an explicit physics-inspired speckle layer to a GAN, so the network learns appearance and speckle separately. The augmented images significantly improve downstream segmentation accuracy when training data is scarce.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/s11548-020-02203-1" target="_blank">10.1007/s11548-020-02203-1</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.5</td>
+  <td class="author-cell"><strong>Gilbert A.</strong><span class="text-dim">2021</span></td>
+  <td class="title-cell">Generating Synthetic Labeled Data from Existing Anatomical Models: An Example with Echocardiography Segmentation</td>
+  <td class="journal-cell">IEEE Transactions on Medical Imaging</td>
+  <td><span class="tag tag-learn">Learning / GAN</span></td>
+  <td class="abst-cell">Gilbert et al. (KCL) generate paired image+segmentation training data by simulating echocardiograms from anatomical models then translating them with a CycleGAN. Closes the loop between physics-based and learning-based simulation, a template the thesis can directly reuse.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TMI.2021.3051806" target="_blank">10.1109/TMI.2021.3051806</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.6</td>
+  <td class="author-cell"><strong>Liang J.</strong><span class="text-dim">2022</span></td>
+  <td class="title-cell">Sketch guided and progressive growing GAN for realistic and editable ultrasound image synthesis</td>
+  <td class="journal-cell">Medical Image Analysis</td>
+  <td><span class="tag tag-learn">Learning / GAN sketch-guided</span></td>
+  <td class="abst-cell">Liang et al. (spGAN) is the most-cited modern US-synthesis paper (123 citations). The user provides an editable anatomical sketch and the GAN generates a realistic US image that follows it, supporting iterative shape editing of lesions and organs - very relevant for thesis-driven dataset augmentation.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.media.2022.102461" target="_blank">10.1016/j.media.2022.102461</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.7</td>
+  <td class="author-cell"><strong>Stojanovski D.</strong><span class="text-dim">2023</span></td>
+  <td class="title-cell">Echo from Noise: Synthetic Ultrasound Image Generation Using Diffusion Models for Real Image Segmentation</td>
+  <td class="journal-cell">Lecture Notes in Computer Science (including subseries </td>
+  <td><span class="tag tag-learn">Learning / Diffusion</span></td>
+  <td class="abst-cell">Stojanovski et al. (KCL) introduce the first diffusion-model-based US generator, conditioned on segmentation masks. Outperforms GAN baselines for downstream segmentation accuracy and inaugurates the diffusion family in US synthesis (2023+).</td>
+  <td><a class="doi-link" href="https://doi.org/10.1007/978-3-031-44521-7_4" target="_blank">10.1007/978-3-031-44521-7_4</a></td>
+</tr>
+<tr>
+  <td class="num-cell">3.8</td>
+  <td class="author-cell"><strong>Wysocki M.</strong><span class="text-dim">2023</span></td>
+  <td class="title-cell">Ultra-NeRF: Neural Radiance Fields for Ultrasound Imaging</td>
+  <td class="journal-cell">Proceedings of Machine Learning Research</td>
+  <td><span class="tag tag-learn">Learning / NeRF</span></td>
+  <td class="abst-cell">Wysocki, Navab et al. (TUM) adapt Neural Radiance Fields to ultrasound by replacing the optical rendering equation with an acoustic one. Given a sparse set of real US sweeps with poses, the network learns a continuous volumetric representation that synthesises new views, enabling sim-to-real transfer.</td>
+  <td><span class="text-dim">—</span></td>
+</tr>
+<tr>
+  <td class="num-cell">3.9</td>
+  <td class="author-cell"><strong>Freiche B.</strong><span class="text-dim">2025</span></td>
+  <td class="title-cell">Ultrasound Image Generation using Latent Diffusion Models</td>
+  <td class="journal-cell">Progress in Biomedical Optics and Imaging - Proceedings</td>
+  <td><span class="tag tag-learn">Learning / Diffusion</span></td>
+  <td class="abst-cell">Latent diffusion model trained on US data for unconditional and conditional generation. Demonstrates higher fidelity than pixel-space diffusion at lower compute cost; one of the most recent works (2025).</td>
+  <td><a class="doi-link" href="https://doi.org/10.1117/12.3047788" target="_blank">10.1117/12.3047788</a></td>
+</tr>
+</tbody></table></div>
+<div class="block-header" id="block4"><span class="block-num">BLOCK 4</span><h2>CT-to-US translation (primary workflow for the thesis)</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( ( &quot;ultrasound simulation&quot; OR &quot;simulated ultrasound&quot; ) AND ( &quot;CT&quot; OR &quot;computed tomography&quot; OR &quot;CT-derived&quot; OR &quot;CT-based&quot; ) ) AND PUBYEAR &gt; 2008</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">4.1</td>
+  <td class="author-cell"><strong>Song Y.</strong><span class="text-dim">2024</span></td>
+  <td class="title-cell">S-CycleGAN: Semantic Segmentation Enhanced CT-Ultrasound Image-to-Image Translation for Robotic Ultrasonography</td>
+  <td class="journal-cell">Proceedings of the 2024 IEEE International Conference o</td>
+  <td><span class="tag tag-ct">CT→US translation / Robotic</span></td>
+  <td class="abst-cell">Song and Chong (2024 IEEE) augment CycleGAN with a semantic-segmentation loss so anatomical structures are preserved during CT-to-US translation. Targets robotic scanning explicitly: the most operationally similar published pipeline to what the thesis aims to build.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/CBS61689.2024.10860598" target="_blank">10.1109/CBS61689.2024.10860598</a></td>
+</tr>
+<tr>
+  <td class="num-cell">4.2</td>
+  <td class="author-cell"><strong>Wang X.</strong><span class="text-dim">2025</span></td>
+  <td class="title-cell">CT to ultrasound abdominal image synthesis using domain-constraint generative adversarial networks</td>
+  <td class="journal-cell">Biomedical Signal Processing and Control</td>
+  <td><span class="tag tag-ct">CT→US translation</span></td>
+  <td class="abst-cell">Wang et al. translate abdominal CT slices to plausible US images with a domain-constrained GAN preserving anatomy across modalities. Found in 3/4 of our Scopus queries: the most cross-cutting recent CT-to-US paper, directly aligned with the thesis input/output structure.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.bspc.2025.108344" target="_blank">10.1016/j.bspc.2025.108344</a></td>
+</tr>
+<tr>
+  <td class="num-cell">4.3</td>
+  <td class="author-cell"><strong>Zhang C.</strong><span class="text-dim">2025</span></td>
+  <td class="title-cell">Computed tomography–based radial endobronchial ultrasound image simulation of peripheral pulmonary lesions using deep learning</td>
+  <td class="journal-cell">Endoscopic Ultrasound</td>
+  <td><span class="tag tag-ct">CT→US translation</span></td>
+  <td class="abst-cell">Generates radial-EBUS-style images from preoperative CT volumes for procedure planning of peripheral lung lesions. Demonstrates the clinical viability of CT-to-US simulation in a niche modality and validates against real intra-operative scans.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1097/eus.0000000000000079" target="_blank">10.1097/eus.0000000000000079</a></td>
+</tr>
+</tbody></table></div>
+<div class="block-header" id="block5"><span class="block-num">BLOCK 5</span><h2>Breast-specific ultrasound simulators</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( ultrasound AND ( simulation OR synthesis ) AND ( breast OR mammary ) AND ( phantom OR model OR virtual ) ) AND PUBYEAR &gt; 2010</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">5.1</td>
+  <td class="author-cell"><strong>Wang Y.</strong><span class="text-dim">2015</span></td>
+  <td class="title-cell">Building a virtual simulation platform for quasistatic breast ultrasound elastography using open source software: A preliminary investigation</td>
+  <td class="journal-cell">Medical Physics</td>
+  <td><span class="tag tag-breast">Breast-specific simulator</span></td>
+  <td class="abst-cell">Wang, Helminen, Jiang (Michigan Tech) chain four open-source packages - Field II + Tetgen + FEBio + VTK - to build a virtual breast model with skin layer, fibro-glandular tissue, Cooper ligaments, milk ducts and a tumour, then deform it under FE compression and simulate the resulting B-mode RF data. Linked by the supervisor; the gold-standard breast simulator for offline validation.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1118/1.4928707" target="_blank">10.1118/1.4928707</a></td>
+</tr>
+<tr>
+  <td class="num-cell">5.2</td>
+  <td class="author-cell"><strong>Jiménez-Gaona Y.</strong><span class="text-dim">2024</span></td>
+  <td class="title-cell">Gan-based data augmentation to improve breast ultrasound and mammography mass classification</td>
+  <td class="journal-cell">Biomedical Signal Processing and Control</td>
+  <td><span class="tag tag-breast">Breast-specific GAN</span></td>
+  <td class="abst-cell">Jiménez-Gaona et al. show that GAN-augmented breast US datasets improve downstream mass classification by 6-8% AUC. Useful as evidence that synthetic breast US images are clinically informative, supporting the thesis claim that a simulator can produce data of training value.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1016/j.bspc.2024.106255" target="_blank">10.1016/j.bspc.2024.106255</a></td>
+</tr>
+<tr>
+  <td class="num-cell">5.3</td>
+  <td class="author-cell"><strong>Zama S.</strong><span class="text-dim">2024</span></td>
+  <td class="title-cell">Clinical Utility of Breast Ultrasound Images Synthesized by a Generative Adversarial Network</td>
+  <td class="journal-cell">Medicina (Lithuania)</td>
+  <td><span class="tag tag-breast">Breast-specific GAN</span></td>
+  <td class="abst-cell">Zama et al. evaluate GAN-synthesised breast US images by blind expert review: 84% rated clinically realistic. Provides a published acceptability bar against which the images of the thesis simulator can later be measured.</td>
+  <td><a class="doi-link" href="https://doi.org/10.3390/medicina60010014" target="_blank">10.3390/medicina60010014</a></td>
+</tr>
+</tbody></table></div>
+<div class="block-header" id="block6"><span class="block-num">BLOCK 6</span><h2>Robotic US, open-source simulators and reviews</h2></div>
+<div class="query-box"><span class="query-label">SCOPUS QUERY</span><div class="query-text">TITLE-ABS-KEY ( ( &quot;ultrasound simulation&quot; OR &quot;simulated ultrasound&quot; ) AND ( robot OR robotic OR &quot;visual servoing&quot; OR &quot;RUSS&quot; ) ) AND PUBYEAR &gt; 2015</div></div>
+<div class="table-wrap"><table>
+<thead><tr>
+  <th>#</th><th>Authors, Year</th><th>Title</th><th>Source</th><th>Family</th><th>Abstract (summary)</th><th>DOI</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="num-cell">6.1</td>
+  <td class="author-cell"><strong>Zhu M.</strong><span class="text-dim">2011</span></td>
+  <td class="title-cell">Real-time image-based B-mode ultrasound image simulation of needles using tensor-product interpolation</td>
+  <td class="journal-cell">IEEE Transactions on Medical Imaging</td>
+  <td><span class="tag tag-rob">Robotic US / needle</span></td>
+  <td class="abst-cell">Zhu and Salcudean (UBC) simulate B-mode images of needles inserted into tissue using a tensor-product interpolation of a small set of pre-recorded needle templates. Critical reference for the BIOPSY phase of the thesis where the simulator must depict an inserted needle in real time.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TMI.2011.2121091" target="_blank">10.1109/TMI.2011.2121091</a></td>
+</tr>
+<tr>
+  <td class="num-cell">6.2</td>
+  <td class="author-cell"><strong>Abadi E.</strong><span class="text-dim">2020</span></td>
+  <td class="title-cell">Virtual clinical trials in medical imaging: A review</td>
+  <td class="journal-cell">Journal of Medical Imaging</td>
+  <td><span class="tag tag-rev">Review / Virtual trials</span></td>
+  <td class="abst-cell">Most-cited (215) review of virtual clinical trials including a substantial section on ultrasound. Frames why high-fidelity simulators (such as the breast simulator we propose) matter for evaluating new imaging techniques without exposing real patients.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1117/1.JMI.7.4.042805" target="_blank">10.1117/1.JMI.7.4.042805</a></td>
+</tr>
+<tr>
+  <td class="num-cell">6.3</td>
+  <td class="author-cell"><strong>Solano-Cordero C.M.</strong><span class="text-dim">2025</span></td>
+  <td class="title-cell">Recent Advances in B-Mode Ultrasound Simulators</td>
+  <td class="journal-cell">Applied Sciences (Switzerland)</td>
+  <td><span class="tag tag-rev">⭐ REVIEW</span></td>
+  <td class="abst-cell">MDPI Applied Sciences scoping review (Solano-Cordero et al., 2025) covering 80 studies from 2014 to 2024 with structured search across PubMed, Scopus, Web of Science and IEEE. Organises simulators into wave-based, ray-based, convolution-based and AI-driven families - this is the classification we adopt for the thesis.</td>
+  <td><a class="doi-link" href="https://doi.org/10.3390/app152312535" target="_blank">10.3390/app152312535</a></td>
+</tr>
+<tr>
+  <td class="num-cell">6.4</td>
+  <td class="author-cell"><strong>Li Y.</strong><span class="text-dim">2025</span></td>
+  <td class="title-cell">UltRAP-Net: Reverse Approximation of Tissue Properties in Ultrasound Imaging</td>
+  <td class="journal-cell">Advanced Intelligent Systems</td>
+  <td><span class="tag tag-rob">Robotic US / tissue properties</span></td>
+  <td class="abst-cell">Li, Wysocki, Navab and Jiang (TUM) invert the imaging equation: given a real US image they estimate the underlying tissue acoustic properties, which can then drive a forward simulator. Bridges learning-based and physics-based simulation and is by the same group behind Ultra-NeRF.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1002/aisy.202400865" target="_blank">10.1002/aisy.202400865</a></td>
+</tr>
+<tr>
+  <td class="num-cell">6.5</td>
+  <td class="author-cell"><strong>Chan T.J.</strong><span class="text-dim">2026</span></td>
+  <td class="title-cell">MUSiK: An Open Source Simulation Library for 3D Multi-View Ultrasound</td>
+  <td class="journal-cell">IEEE Transactions on Biomedical Engineering</td>
+  <td><span class="tag tag-open">Open-source 3D simulator</span></td>
+  <td class="abst-cell">Chan, Anthony and Pouch (Penn) release a fully open-source library for simulating 3-D multi-view ultrasound from any anatomical volume. Found in 4/4 of our Scopus queries (highest cross-cutting score). Most promising recent open release; should be evaluated as the primary candidate alongside Isaac.</td>
+  <td><a class="doi-link" href="https://doi.org/10.1109/TBME.2025.3605577" target="_blank">10.1109/TBME.2025.3605577</a></td>
+</tr>
+</tbody></table></div>
+
+</main>
+<footer>32 papers — Scopus search 2026-04-26 · Curated for thesis Moro · Robotic CT-guided breast biopsy</footer>
+</body></html>
