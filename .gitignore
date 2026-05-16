@@ -45,3 +45,17 @@ log/
 # === Temp ===
 *.log
 *.tmp
+# === MUSiK external repo ===
+
+external/MUSiK/venv_musik/
+
+external/MUSiK/demos/**/results/
+
+external/MUSiK/demos/**/intro_demo/
+
+# === MUSiK simulation outputs  ===
+
+notebooks/musik/runs/
+
+output/musik_runs/
+
