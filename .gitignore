@@ -45,3 +45,5 @@ log/
 # === Temp ===
 *.log
 *.tmp
+# Local notes
+for_claude_code.md
