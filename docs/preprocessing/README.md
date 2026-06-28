@@ -2,14 +2,7 @@
 
 Traditional (non-learning) image-processing pipeline that turns the CIRS Model 073
 breast-phantom CT into a normalized volume plus a binary mask of the bright
-inclusions (candidate lesions). This is **track 1** of the thesis
-(robot-assisted ultrasound-guided breast biopsy) and feeds both the simulation
-track (mesh export) and the robot track (target centroids).
-
-The non-learning constraint is a supervisor decision (Tomassini, 23/02/2026),
-motivated by the small number of subjects available (4 patients with CT + the
-phantom). The preprocessing order — HU conversion, then intensity normalization,
-then windowing — was explicitly requested in that same brief.
+inclusions (candidate lesions).
 
 ---
 
@@ -25,18 +18,16 @@ DICOM CT
   -> NRRD output (+ LPS spatial metadata via SimpleITK)
 ```
 
-The threshold is **data-driven, not arbitrary** (the explicit supervisor
-requirement): the glandular intensity peak is fitted with a Gaussian on the
+The threshold is data-driven, not arbitrary: the glandular intensity peak is fitted with a Gaussian on the
 phantom-interior band `[0.30, 0.85]`, using the left side of the peak only to
 avoid bias from the inclusion tail, and the inclusion threshold is set at
 `mu + K*sigma` with `K_DEFAULT = 3`.
 
 ---
 
-## Key outputs (`output/preprocessing_data/paper_based/<series>/`)
+## Key outputs
 
-Two phantom series are processed: **S2010** and **S3010**. They do **not** share
-geometry — verify with the headers, do not assume:
+Two phantom series are processed: S2010 and S3010.
 
 | | S2010 | S3010 |
 |---|---|---|
@@ -47,14 +38,11 @@ geometry — verify with the headers, do not assume:
 Per series: `filtered_volume.nrrd` (values in `[0,1]`),
 `filtered_volume_hu.nrrd`, and the three binary masks `mask_inclusions.nrrd`,
 `mask_fat.nrrd`, `mask_glandular.nrrd` (uint8, values `{0,1}`), plus `.npy`
-mirrors and `spacing.npy`.
-
-`mask_inclusions.nrrd` is a **single binary mask**, not a labelled volume; the
-individual inclusions are separated downstream via connected-component analysis.
+mirrors and `spacing.npy`. `mask_inclusions.nrrd` is a single binary mask.
 
 ---
 
-## Evolution / steps taken
+## Process of the data
 
 1. **First opening of the phantom in 3D Slicer** (Dec 2025). Visual inspection,
    manual thresholding trials, first 3D reconstruction. Noted the metal seed in
@@ -72,16 +60,10 @@ individual inclusions are separated downstream via connected-component analysis.
    Gaussian-fit threshold).
 5. **Data-driven threshold** added: Gaussian fit on the glandular peak, `k=3`,
    restricted to the phantom band to exclude air dominance.
-6. **Notebook `04_analyzed_phantom.ipynb`** and `inclusions_stats.py` — standalone
-   connected-component analysis of the inclusion mask (SimpleITK
-   `RelabelComponent` + `LabelShapeStatisticsImageFilter`, one efficient pass).
-7. **Notebook `01_extraction_CT_patient.ipynb`** — patient-CT extraction scaffold
-   (pending full run; the hardcoded phantom band `[0.30,0.85]` will not transfer
-   to patients — a body-mask + breast-region extraction step is required first).
 
 ---
 
-## Repository layout (this branch)
+## Repository layout
 
 ```
 notebooks/
@@ -99,35 +81,3 @@ dataset/
   CMB-BRCA/ , consider_cases/           TCIA patient data
   metadata.csv
 ```
-
----
-
-## How to reproduce
-
-```
-source py_venv/bin/activate
-jupyter lab
-```
-
-Open `notebooks/03_preprocessing_phantom_paper_based.ipynb` and run top to bottom.
-SimpleITK reads/writes NRRD with full LPS spatial metadata; use
-`useCompression=False` for the large float volumes.
-
----
-
-## Conventions
-
-- Environment: Python 3.12 in `py_venv/`. Stack: SimpleITK, numpy, scipy, matplotlib, pydicom.
-- All code, comments and commit messages in English; conventional-commit style.
-- The `filtered_volume` is in `[0,1]` (not HU): threshold values apply directly,
-  no conversion.
-
----
-
-## Open questions (for supervisors)
-
-- **Reference inclusion set:** is the ground truth the Python `k=3` mask, or the
-  set of inclusions segmented manually in 3D Slicer? The two differ.
-- **Patient pipeline:** no breast-lesion CT annotations exist in CMB-BRCA;
-  decide how to evaluate segmentation quality without a direct gold standard
-  (possibly involving clinicians, per the 23/02 brief).

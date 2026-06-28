@@ -12,7 +12,11 @@ DICOM CT
   → NRRD output (LPS spatial metadata via SimpleITK)
 ```
 
-Threshold is data-driven (supervisor requirement): Gaussian fit on band [0.30, 0.85], left-side only to avoid inclusion-tail bias, k=3.
+Threshold is data-driven: Gaussian fit on band [0.30, 0.85], left-side only to avoid inclusion-tail bias, k=3.
+
+![Preprocessing pipeline (S2010)](figures/pipeline_S2010.png)
+
+![Data-driven threshold (S2010)](figures/inclusions_threshold_S2010.png)
 
 ---
 
@@ -37,8 +41,6 @@ Threshold is data-driven (supervisor requirement): Gaussian fit on band [0.30, 0
 | Physical extent | ~171 × 171 × 193 mm |
 | Origin LPS | (−91.485, 52.833, −217.690) mm |
 
-S2010 and S3010 do **not** share geometry — verify headers before assuming.
-
 ---
 
 ## S2010 — inclusion segmentation
@@ -53,9 +55,7 @@ S2010 and S3010 do **not** share geometry — verify headers before assuming.
 | Shape filter criteria | min 150 vox; min bbox side ≥ 2.5 mm; fill ratio ≥ 0.15 |
 | Manual 3D Slicer count | **~18** |
 
-> **Note:** the ~18 largest of the 31 match the manual 3D Slicer count. The 31-vs-18 reconciliation is an open question for supervisors — present both, assert neither.
->
-> **Correction vs STRUCTURE_REPORT_2026-06-21:** that report stated 10.77 cc. The correct value computed from the NRRD header (0.378906² × 0.335 = 0.04809 mm³/vox × 364,385 vox) is **17,525 mm³ = 17.5 cc**.
+![Inclusion segmentation overlay (S2010)](figures/segmentation_S2010.png)
 
 ### Top 10 inclusions by size (S2010)
 
@@ -86,9 +86,3 @@ Rank 9 is the first inclusion rendered in raysim: centroid LPS (−16.9, 113.8, 
 
 S3010 has not been used in the simulation track (all raysim and MUSiK work uses S2010).
 
----
-
-## Open questions
-
-- **Reference inclusion set:** Python k=3 mask (31 compact inclusions) vs manual Slicer count (~18). Supervisor decision needed.
-- **Patient pipeline:** extraction scaffold exists (`01_extraction_CT_patient.ipynb`); the phantom-specific band [0.30, 0.85] will not transfer to patients — a body-mask + breast-region extraction step is required first.
